@@ -28,6 +28,15 @@
   color: #90caf9;
 }
 
+.round-indicator {
+  margin-left: auto;
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #78909c;
+}
+
 /* ── Game area: fills remaining height ───────────────── */
 .game-area {
   flex: 1;
@@ -100,6 +109,10 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+}
+
+.setting-row-wide {
+  grid-column: 1 / -1;
 }
 
 .setting-label {
@@ -184,6 +197,15 @@
 .btn-start:hover:not(:disabled) {
   background: #1976d2;
   box-shadow: 0 6px 18px rgba(21, 101, 192, 0.55);
+}
+
+.btn-finish {
+  background: #37474f;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+.btn-finish:hover:not(:disabled) {
+  background: #455a64;
 }
 
 .btn-submit {
