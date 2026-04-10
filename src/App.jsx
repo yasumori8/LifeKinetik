@@ -161,8 +161,6 @@ export default function App() {
       </header>
 
       <main className="game-area">
-        <PhaseMessage phase={phase} />
-
         <div className="canvas-wrapper">
           <Canvas canvasRef={canvasRef} onCanvasClick={handleCanvasClick} />
         </div>

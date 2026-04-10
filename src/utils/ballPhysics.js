@@ -2,28 +2,30 @@ import { BALL } from '../constants/game.js'
 import { shuffle } from './shuffle.js'
 
 export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax }) {
-  const cols = ballCount <= 8 ? 4 : ballCount <= 10 ? 5 : 6
-  const rows = Math.ceil(ballCount / cols)
-  const cellW = W / cols
-  const cellH = H / rows
-  const jitter = 28
+  const R = BALL.RADIUS
+  const margin = R + 8
+  const minDist = R * 2 + 10
 
   const ids = Array.from({ length: ballCount }, (_, i) => i)
   const targetIds = new Set(shuffle(ids).slice(0, targetCount))
 
-  return ids.map(i => {
-    const col = i % cols
-    const row = Math.floor(i / cols)
-    const cx = cellW * (col + 0.5) + (Math.random() - 0.5) * jitter
-    const cy = cellH * (row + 0.5) + (Math.random() - 0.5) * jitter
+  const placed = []
 
-    const x = Math.max(BALL.RADIUS + 4, Math.min(W - BALL.RADIUS - 4, cx))
-    const y = Math.max(BALL.RADIUS + 4, Math.min(H - BALL.RADIUS - 4, cy))
+  for (const i of ids) {
+    let x, y, attempts = 0
+    do {
+      x = margin + Math.random() * (W - margin * 2)
+      y = margin + Math.random() * (H - margin * 2)
+      attempts++
+    } while (
+      attempts < 100 &&
+      placed.some(p => Math.hypot(x - p.x, y - p.y) < minDist)
+    )
 
     const angle = Math.random() * Math.PI * 2
     const speed = speedMin + Math.random() * (speedMax - speedMin)
 
-    return {
+    placed.push({
       id: i,
       x,
       y,
@@ -32,8 +34,10 @@ export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax }) 
       isTarget: targetIds.has(i),
       number: null,
       opacity: 0,
-    }
-  })
+    })
+  }
+
+  return placed
 }
 
 export function applyWallBounce(ball, W, H) {

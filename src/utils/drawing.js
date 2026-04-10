@@ -102,9 +102,8 @@ function getBallResultStyle(ball, score) {
   const entry = score.perBall.find(p => p.id === ball.id)
   if (!entry) return {}
   switch (entry.status) {
-    case 'hit':    return { glowColor: '#00E676', glowBlur: 28, ringColor: '#00E676' }
-    case 'missed': return { glowColor: '#FFD700', glowBlur: 28, ringColor: '#FFD700' }
-    case 'wrong':  return { ringColor: '#FF1744' }
-    default:       return {}
+    case 'hit':   return { glowColor: '#00E676', glowBlur: 28, ringColor: '#00E676' }
+    case 'wrong': return { glowColor: '#FF1744', glowBlur: 28, ringColor: '#FF1744' }
+    default:      return {}
   }
 }
