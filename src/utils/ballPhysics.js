@@ -1,10 +1,10 @@
-import { BALL } from '../constants/game.js'
 import { shuffle } from './shuffle.js'
 
 // Creates the initial array of ball objects with random positions and velocities.
 // Uses rejection sampling to ensure no two balls overlap at spawn.
-export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax }) {
-  const R = BALL.RADIUS
+// `radius` is shared by all balls in a single round (pre-computed in App.jsx).
+export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax, radius }) {
+  const R = radius
   const margin = R + 8           // keep balls fully within canvas edges
   const minDist = R * 2 + 10    // minimum centre-to-centre distance between balls
 
@@ -37,6 +37,7 @@ export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax }) 
       id: i,
       x,
       y,
+      radius: R,                    // per-ball so physics/drawing/click can read uniformly
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       isTarget: targetIds.has(i),  // remembered throughout the round; never changes
@@ -51,7 +52,7 @@ export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax }) 
 // Reflects a ball's velocity when it hits any canvas edge and clamps its position
 // so it never escapes the boundary even at high speeds.
 export function applyWallBounce(ball, W, H) {
-  const R = BALL.RADIUS
+  const R = ball.radius
   if (ball.x - R < 0)  { ball.x = R;     ball.vx =  Math.abs(ball.vx) }
   if (ball.x + R > W)  { ball.x = W - R; ball.vx = -Math.abs(ball.vx) }
   if (ball.y - R < 0)  { ball.y = R;     ball.vy =  Math.abs(ball.vy) }
@@ -60,8 +61,8 @@ export function applyWallBounce(ball, W, H) {
 
 // Detects and resolves ball-to-ball collisions using elastic physics (equal mass).
 // O(n²) over all pairs — acceptable because n ≤ 12.
+// minDist uses the sum of the two balls' radii so this still works if sizes differ.
 export function resolveCollisions(balls) {
-  const R = BALL.RADIUS
   for (let i = 0; i < balls.length; i++) {
     for (let j = i + 1; j < balls.length; j++) {
       const a = balls[i]
@@ -69,7 +70,7 @@ export function resolveCollisions(balls) {
       const dx = b.x - a.x
       const dy = b.y - a.y
       const distSq = dx * dx + dy * dy
-      const minDist = R * 2
+      const minDist = a.radius + b.radius
       if (distSq >= minDist * minDist || distSq === 0) continue
 
       const dist = Math.sqrt(distSq)

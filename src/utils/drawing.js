@@ -1,8 +1,10 @@
-import { PHASES, BALL, TIMING } from '../constants/game.js'
+import { PHASES, TIMING } from '../constants/game.js'
 
 // Draws a single ball onto the canvas with optional glow, selection ring, and number label.
+// Uses ball.radius so each round can render at a different size.
 function drawBall(ctx, ball, options = {}) {
   const { glowColor, glowBlur, ringColor, ringWidth, alpha = 1, labelAlpha = 0 } = options
+  const R = ball.radius
 
   ctx.save()
   ctx.globalAlpha = alpha
@@ -15,18 +17,18 @@ function drawBall(ctx, ball, options = {}) {
 
   // Radial gradient gives the ball a subtle 3D highlight (light top-left, darker base)
   const grad = ctx.createRadialGradient(
-    ball.x - BALL.RADIUS * 0.3,
-    ball.y - BALL.RADIUS * 0.3,
-    BALL.RADIUS * 0.1,
+    ball.x - R * 0.3,
+    ball.y - R * 0.3,
+    R * 0.1,
     ball.x,
     ball.y,
-    BALL.RADIUS,
+    R,
   )
   grad.addColorStop(0, '#7ea8d8')  // highlight colour
   grad.addColorStop(1, '#3a6ea8')  // base colour
 
   ctx.beginPath()
-  ctx.arc(ball.x, ball.y, BALL.RADIUS, 0, Math.PI * 2)
+  ctx.arc(ball.x, ball.y, R, 0, Math.PI * 2)
   ctx.fillStyle = grad
   ctx.fill()
 
@@ -37,7 +39,7 @@ function drawBall(ctx, ball, options = {}) {
   // Selection / result ring drawn slightly outside the ball edge
   if (ringColor && ringWidth > 0) {
     ctx.beginPath()
-    ctx.arc(ball.x, ball.y, BALL.RADIUS + ringWidth / 2 + 2, 0, Math.PI * 2)
+    ctx.arc(ball.x, ball.y, R + ringWidth / 2 + 2, 0, Math.PI * 2)
     ctx.strokeStyle = ringColor
     ctx.lineWidth = ringWidth
     ctx.stroke()
@@ -47,7 +49,7 @@ function drawBall(ctx, ball, options = {}) {
   if (ball.number !== null && labelAlpha > 0) {
     ctx.globalAlpha = alpha * labelAlpha
     ctx.shadowBlur = 0
-    ctx.font = `bold ${Math.floor(BALL.RADIUS * 0.85)}px system-ui, sans-serif`
+    ctx.font = `bold ${Math.floor(R * 0.85)}px system-ui, sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillStyle = '#fff'

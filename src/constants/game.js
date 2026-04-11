@@ -35,3 +35,17 @@ export const BALL_COUNT_OPTIONS = [8, 10, 12]
 
 // Target count options (how many balls the user must track and identify)
 export const TARGET_COUNT_OPTIONS = [4, 5, 6]
+
+// Ball size mode options — "Fixed" uses BALL.RADIUS every round,
+// "Random" picks a value uniformly between 50%–100% of BALL.RADIUS per round.
+export const BALL_SIZE_OPTIONS = ['Fixed', 'Random']
+
+// Returns the radius to use for the upcoming round based on the selected mode.
+// Called once per round start in App.jsx.
+// "Random" varies the radius within 30% of the max (70%–100% of BALL.RADIUS).
+export function pickRoundRadius(mode) {
+  if (mode === 'Random') {
+    return BALL.RADIUS * (0.7 + Math.random() * 0.3)
+  }
+  return BALL.RADIUS
+}

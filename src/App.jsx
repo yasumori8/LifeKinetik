@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from 'react'
-import { PHASES, BALL, speedLevelToRange } from './constants/game.js'
+import { PHASES, speedLevelToRange, pickRoundRadius } from './constants/game.js'
 import { initBalls } from './utils/ballPhysics.js'
 import { shuffle } from './utils/shuffle.js'
 import { useGameLoop } from './hooks/useGameLoop.js'
 import Canvas from './components/Canvas.jsx'
 import GameControls from './components/GameControls.jsx'
 import ResultsOverlay from './components/ResultsOverlay.jsx'
+import SidePanel from './components/SidePanel.jsx'
 import './App.css'
 
 export default function App() {
@@ -16,12 +17,14 @@ export default function App() {
   const [ballCount, setBallCount] = useState(8)      // total balls on screen
   const [targetCount, setTargetCount] = useState(4)  // balls the user must track
   const [repeats, setRepeats] = useState(5)          // rounds per session
+  const [ballSize, setBallSize] = useState('Fixed')  // 'Fixed' or 'Random' per-round radius
 
   // ── Per-round UI state (trigger re-renders for the header / overlay) ──────
   const [currentRound, setCurrentRound] = useState(1)
   const [selected, setSelected] = useState(new Set())  // ball IDs the user has tapped
   const [score, setScore] = useState(null)             // result object for RESULT phase
   const [sessionPoints, setSessionPoints] = useState(0) // accumulated internal pts this session
+  const [panelOpen, setPanelOpen] = useState(false)    // left settings pane toggle
 
   // ── Refs used by the animation loop ──────────────────────────────────────
   // The rAF tick closure reads these instead of React state to avoid stale closures.
@@ -80,6 +83,7 @@ export default function App() {
     const W = canvas ? canvas.width : window.innerWidth
     const H = canvas ? canvas.height : window.innerHeight
     const { min, max } = speedLevelToRange(speed)
+    const radius = pickRoundRadius(ballSize)
 
     currentRoundRef.current = round
     setCurrentRound(round)
@@ -91,6 +95,7 @@ export default function App() {
       targetCount,
       speedMin: min,
       speedMax: max,
+      radius,
     })
 
     // Clear any selection and score left over from the previous round
@@ -103,7 +108,7 @@ export default function App() {
     startTimeRef.current = performance.now()
     startLoop()
     transitionTo(PHASES.APPEAR)
-  }, [duration, speed, ballCount, targetCount, startLoop, transitionTo])
+  }, [duration, speed, ballCount, targetCount, ballSize, startLoop, transitionTo])
 
   // Kicks off a new session: resets session score and starts round 1
   const handleStart = useCallback(() => {
@@ -204,13 +209,12 @@ export default function App() {
     const mx = (e.clientX - rect.left) * scaleX
     const my = (e.clientY - rect.top) * scaleY
 
-    const R = BALL.RADIUS
     const tc = targetCountRef.current
     for (const ball of ballsRef.current) {
       const dx = mx - ball.x
       const dy = my - ball.y
       // Use squared distance to avoid a sqrt — faster and sufficient for hit testing
-      if (dx * dx + dy * dy <= R * R) {
+      if (dx * dx + dy * dy <= ball.radius * ball.radius) {
         const next = new Set(selectedRef.current)
         if (next.has(ball.id)) {
           next.delete(ball.id)           // tapping again deselects
@@ -229,6 +233,11 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
+        <button
+          className="hamburger"
+          onClick={() => setPanelOpen(open => !open)}
+          aria-label="Toggle settings"
+        >☰</button>
         <h1 className="app-title">Vision Training App</h1>
 
         {/* Show round progress and running score while a session is active.
@@ -251,22 +260,30 @@ export default function App() {
 
         <GameControls
           phase={phase}
-          duration={duration}
-          speed={speed}
-          ballCount={ballCount}
           targetCount={targetCount}
-          repeats={repeats}
           selectedCount={selected.size}
-          onDurationChange={setDuration}
-          onSpeedChange={setSpeed}
-          onBallCountChange={setBallCount}
-          onTargetCountChange={setTargetCount}
-          onRepeatsChange={setRepeats}
           onStart={handleStart}
           onSubmit={handleSubmit}
           onNext={handleNext}
           onFinish={handleFinish}
           isLastRound={isLastRound}
+        />
+
+        <SidePanel
+          isOpen={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          duration={duration}
+          speed={speed}
+          ballCount={ballCount}
+          targetCount={targetCount}
+          repeats={repeats}
+          ballSize={ballSize}
+          onDurationChange={setDuration}
+          onSpeedChange={setSpeed}
+          onBallCountChange={setBallCount}
+          onTargetCountChange={setTargetCount}
+          onRepeatsChange={setRepeats}
+          onBallSizeChange={setBallSize}
         />
       </main>
     </div>
