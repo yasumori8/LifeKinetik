@@ -11,6 +11,7 @@ export default function SidePanel({
   trainingLevel, onTrainingLevelChange,
   duration, speed, ballCount, targetCount, repeats, ballSize,
   onDurationChange, onSpeedChange, onBallCountChange, onTargetCountChange, onRepeatsChange, onBallSizeChange,
+  user, loading, onSignIn, onSignOut,
 }) {
   if (!isOpen) return null
 
@@ -35,7 +36,7 @@ export default function SidePanel({
             /* ── Training tab: structured session with a single Level slider ── */
             <>
               <p className="side-panel-desc">
-                Standard 12-round training. Speed increases every 4 rounds.
+                Standard 12 Round Training
               </p>
 
               <div className="setting-row">
@@ -117,6 +118,26 @@ export default function SidePanel({
                 <div className="slider-endpoints"><span>1</span><span>20</span></div>
               </div>
             </>
+          )}
+        </div>
+
+        {/* Login section pinned to the bottom of the panel */}
+        <div className="side-panel-login">
+          {loading ? null : user ? (
+            <div className="login-info">
+              <img
+                className="login-avatar"
+                src={user.photoURL}
+                alt=""
+                referrerPolicy="no-referrer"
+              />
+              <span className="login-name">{user.displayName}</span>
+              <button className="btn-link" onClick={onSignOut}>Sign out</button>
+            </div>
+          ) : (
+            <button className="btn btn-google" onClick={onSignIn}>
+              Sign in with Google
+            </button>
           )}
         </div>
       </aside>

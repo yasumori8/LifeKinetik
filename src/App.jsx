@@ -4,6 +4,7 @@ import { getTrainingRoundConfig, TRAINING_ROUNDS } from './constants/training.js
 import { initBalls } from './utils/ballPhysics.js'
 import { shuffle } from './utils/shuffle.js'
 import { useGameLoop } from './hooks/useGameLoop.js'
+import { useAuth } from './hooks/useAuth.js'
 import Canvas from './components/Canvas.jsx'
 import GameControls from './components/GameControls.jsx'
 import ResultsOverlay from './components/ResultsOverlay.jsx'
@@ -11,6 +12,9 @@ import SidePanel from './components/SidePanel.jsx'
 import './App.css'
 
 export default function App() {
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const { user, loading: authLoading, signInWithGoogle, signOut: handleSignOut } = useAuth()
+
   // ── Mode selection: 'Training' uses a structured schedule, 'Custom' uses the freeform settings
   const [mode, setMode] = useState('Training')
   const [trainingLevel, setTrainingLevel] = useState(6)  // Training mode level 1–18
@@ -320,6 +324,10 @@ export default function App() {
           onTargetCountChange={setTargetCount}
           onRepeatsChange={setRepeats}
           onBallSizeChange={setBallSize}
+          user={user}
+          loading={authLoading}
+          onSignIn={signInWithGoogle}
+          onSignOut={handleSignOut}
         />
       </main>
     </div>
