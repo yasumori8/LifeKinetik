@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { PHASES, speedLevelToRange, pickRoundRadius } from './constants/game.js'
+import { getTrainingRoundConfig, TRAINING_ROUNDS } from './constants/training.js'
 import { initBalls } from './utils/ballPhysics.js'
 import { shuffle } from './utils/shuffle.js'
 import { useGameLoop } from './hooks/useGameLoop.js'
@@ -10,7 +11,11 @@ import SidePanel from './components/SidePanel.jsx'
 import './App.css'
 
 export default function App() {
-  // ── Settings (user-configurable, drive the next round) ───────────────────
+  // ── Mode selection: 'Training' uses a structured schedule, 'Custom' uses the freeform settings
+  const [mode, setMode] = useState('Training')
+  const [trainingLevel, setTrainingLevel] = useState(6)  // Training mode level 1–18
+
+  // ── Custom mode settings (ignored when mode === 'Training') ──────────────
   const [phase, setPhase] = useState(PHASES.IDLE)
   const [duration, setDuration] = useState(8)        // seconds balls move (5–15)
   const [speed, setSpeed] = useState(6)              // speed level 1–20
@@ -40,6 +45,8 @@ export default function App() {
   const currentRoundRef = useRef(1)
   const repeatsRef = useRef(5)
   const sessionPointsRef = useRef(0)
+  const modeRef = useRef('Training')            // mirror of mode for rAF/startRound
+  const trainingLevelRef = useRef(6)            // mirror of trainingLevel
 
   // Syncs both the ref (read by rAF) and the state (triggers re-render for the UI)
   const updateSelected = useCallback((newSet) => {
@@ -78,21 +85,43 @@ export default function App() {
 
   // Initialises and starts a single round. Called both from handleStart (round 1)
   // and handleNext (subsequent rounds) so all reset logic lives in one place.
+  // In Training mode, per-round config comes from getTrainingRoundConfig;
+  // in Custom mode, it reads from the user-configured state values.
   const startRound = useCallback((round) => {
     const canvas = canvasRef.current
     const W = canvas ? canvas.width : window.innerWidth
     const H = canvas ? canvas.height : window.innerHeight
-    const { min, max } = speedLevelToRange(speed)
-    const radius = pickRoundRadius(ballSize)
+
+    let roundSpeed, roundDuration, roundBallSize, roundBallCount, roundTargetCount
+
+    if (modeRef.current === 'Training') {
+      // Training mode: structured per-round config from the schedule
+      const config = getTrainingRoundConfig(trainingLevelRef.current, round)
+      roundSpeed = config.speed
+      roundDuration = config.duration
+      roundBallSize = config.ballSize
+      roundBallCount = config.ballCount
+      roundTargetCount = config.targetCount
+    } else {
+      // Custom mode: use the freeform settings chosen by the user
+      roundSpeed = speed
+      roundDuration = duration
+      roundBallSize = ballSize
+      roundBallCount = ballCount
+      roundTargetCount = targetCount
+    }
+
+    const { min, max } = speedLevelToRange(roundSpeed)
+    const radius = pickRoundRadius(roundBallSize)
 
     currentRoundRef.current = round
     setCurrentRound(round)
-    targetCountRef.current = targetCount
+    targetCountRef.current = roundTargetCount
 
     // Spawn fresh balls with random positions, velocities, and target assignments
     ballsRef.current = initBalls(W, H, {
-      ballCount,
-      targetCount,
+      ballCount: roundBallCount,
+      targetCount: roundTargetCount,
       speedMin: min,
       speedMax: max,
       radius,
@@ -104,19 +133,22 @@ export default function App() {
     setSelected(new Set())
     setScore(null)
 
-    moveDurationRef.current = duration * 1000
+    moveDurationRef.current = roundDuration * 1000
     startTimeRef.current = performance.now()
     startLoop()
     transitionTo(PHASES.APPEAR)
   }, [duration, speed, ballCount, targetCount, ballSize, startLoop, transitionTo])
 
-  // Kicks off a new session: resets session score and starts round 1
+  // Kicks off a new session: resets session score and starts round 1.
+  // In Training mode, repeats are fixed at TRAINING_ROUNDS (12).
   const handleStart = useCallback(() => {
-    repeatsRef.current = repeats
+    modeRef.current = mode
+    trainingLevelRef.current = trainingLevel
+    repeatsRef.current = mode === 'Training' ? TRAINING_ROUNDS : repeats
     sessionPointsRef.current = 0
     setSessionPoints(0)
     startRound(1)
-  }, [repeats, startRound])
+  }, [mode, trainingLevel, repeats, startRound])
 
   // Evaluates the user's selection and computes scores, then transitions to RESULT.
   // Scoring: all correct = 3 internal pts, 1 miss = 1 pt, 2+ misses = 0 pt.
@@ -272,6 +304,10 @@ export default function App() {
         <SidePanel
           isOpen={panelOpen}
           onClose={() => setPanelOpen(false)}
+          mode={mode}
+          onModeChange={setMode}
+          trainingLevel={trainingLevel}
+          onTrainingLevelChange={setTrainingLevel}
           duration={duration}
           speed={speed}
           ballCount={ballCount}

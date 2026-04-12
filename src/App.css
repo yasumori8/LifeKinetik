@@ -281,12 +281,33 @@
   overflow-y: auto;
 }
 
-.side-panel-title {
-  margin: 0 0 18px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #90caf9;
-  letter-spacing: 0.04em;
+.side-panel-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #3a4060;
+  border-radius: 6px;
+  background: #1a1f35;
+  color: #90a4ae;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover { background: #252c48; color: #e8eaf6; }
+.tab-btn.active { background: #1565c0; color: #fff; border-color: #1976d2; }
+
+.side-panel-desc {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: #78909c;
+  line-height: 1.4;
 }
 
 .side-panel-content {
