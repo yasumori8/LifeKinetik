@@ -7,6 +7,9 @@ export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax, ra
   const R = radius
   const margin = R + 8           // keep balls fully within canvas edges
   const minDist = R * 2 + 10    // minimum centre-to-centre distance between balls
+  // Floor speed: after collisions, any ball moving slower than this gets sped
+  // back up to this value (direction preserved) so the action never stalls.
+  const floorSpeed = speedMin * 0.5
 
   const ids = Array.from({ length: ballCount }, (_, i) => i)
 
@@ -40,6 +43,7 @@ export function initBalls(W, H, { ballCount, targetCount, speedMin, speedMax, ra
       radius: R,                    // per-ball so physics/drawing/click can read uniformly
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
+      floorSpeed,                   // minimum allowed speed after collisions
       isTarget: targetIds.has(i),  // remembered throughout the round; never changes
       number: null,                 // assigned via Fisher-Yates shuffle when MOVE ends
       opacity: 0,                   // starts at 0 and fades to 1 during APPEAR phase
@@ -95,6 +99,19 @@ export function resolveCollisions(balls) {
   }
 }
 
+// If a collision left a ball nearly stationary, scale its velocity back up to
+// the floor speed so the action never stalls out. Direction is preserved.
+function enforceMinSpeed(balls) {
+  for (const ball of balls) {
+    const speed = Math.hypot(ball.vx, ball.vy)
+    if (speed < ball.floorSpeed && speed > 0.0001) {
+      const factor = ball.floorSpeed / speed
+      ball.vx *= factor
+      ball.vy *= factor
+    }
+  }
+}
+
 // Advances all ball positions by dt seconds, then enforces boundaries and collisions.
 // Call order matters: move first, then bounce walls, then resolve ball-to-ball overlaps.
 export function stepBalls(balls, dt, W, H) {
@@ -104,4 +121,5 @@ export function stepBalls(balls, dt, W, H) {
     applyWallBounce(ball, W, H)
   }
   resolveCollisions(balls)
+  enforceMinSpeed(balls)
 }
